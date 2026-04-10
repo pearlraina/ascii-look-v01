@@ -478,6 +478,7 @@ body::after {
 .c-kw      { color: var(--text-bright); }
 .c-fn      { color: var(--green); }
 .c-num     { color: #7eb8ff; }
+.c-str     { color: #b5cea8; }
 
 /* ============================================================
    FOOTER
