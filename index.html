@@ -23,237 +23,154 @@
   <!-- NAV -->
   <nav class="nav" id="nav" aria-label="Main navigation">
     <div class="nav-container">
-      <a href="#hero" class="nav-logo" aria-label="ASCII Look home">ASCII Look</a>
-      <ul class="nav-links" role="list">
-        <li><a href="#how-it-works" class="nav-link">How it works</a></li>
-        <li><a href="#upload"       class="nav-link">Upload</a></li>
-        <li><a href="#demo"         class="nav-link">Live demo</a></li>
-        <li><a href="https://github.com/pearlraina/ascii-look-v01" class="nav-link" target="_blank" rel="noopener">GitHub</a></li>
-      </ul>
+      <span class="nav-logo">ASCII Look</span>
+      <a href="https://github.com/pearlraina/ascii-look-v01" class="nav-link" target="_blank" rel="noopener">GitHub</a>
     </div>
   </nav>
 
 
-  <!-- HERO -->
-  <section class="hero" id="hero">
-    <canvas id="hero-canvas" aria-hidden="true"></canvas>
+  <!-- MAIN -->
+  <main>
+    <section class="upload-section" aria-label="Upload and convert">
+      <div class="section-container">
 
-    <div class="hero-content">
-      <p class="hero-eyebrow">Instant ASCII art</p>
-      <h1 class="hero-title">Turn photos &amp; videos<br>into ASCII art</h1>
-      <p class="hero-sub">Upload any image or video and watch it transform into colorful character art — using its original colors.</p>
-      <div class="hero-actions">
-        <a href="#upload" class="btn btn-primary">Upload a file</a>
-        <a href="#demo"   class="btn btn-ghost">See a live demo</a>
-      </div>
-    </div>
+        <header class="section-header">
+          <h1 class="section-title">Turn photos &amp; videos<br>into ASCII art</h1>
+          <p class="section-sub">Drop any image or video and watch it transform into character art using its original colors. Supports JPG, PNG, GIF, MP4, WebM, and MOV.</p>
+        </header>
 
-    <div class="hero-scroll" aria-hidden="true">
-      <span>Scroll down</span>
-      <span class="scroll-arrow">↓</span>
-    </div>
-  </section>
-
-
-  <!-- HOW IT WORKS -->
-  <section class="features" id="how-it-works" aria-label="How it works">
-    <div class="section-container">
-
-      <header class="section-header">
-        <p class="section-eyebrow">Simple by design</p>
-        <h2 class="section-title">How it works</h2>
-      </header>
-
-      <div class="features-grid">
-
-        <article class="feature-card">
-          <div class="feature-icon" aria-hidden="true">↑</div>
-          <h3 class="feature-title">Drop your file</h3>
-          <p class="feature-text">
-            Drag and drop any photo or video onto the upload area, or click to browse your files.
-            No account needed.
-          </p>
-        </article>
-
-        <article class="feature-card">
-          <div class="feature-icon" aria-hidden="true">◈</div>
-          <h3 class="feature-title">Colors stay true</h3>
-          <p class="feature-text">
-            Each character takes the exact color from that spot in your image —
-            a blue sky stays blue, a green tree stays green.
-          </p>
-        </article>
-
-        <article class="feature-card">
-          <div class="feature-icon" aria-hidden="true">⊞</div>
-          <h3 class="feature-title">Adjust the detail</h3>
-          <p class="feature-text">
-            Slide between fine and coarse to get more detail or a bolder, more
-            graphic look. Pick from three character styles too.
-          </p>
-        </article>
-
-        <article class="feature-card">
-          <div class="feature-icon" aria-hidden="true">▶</div>
-          <h3 class="feature-title">Video plays live</h3>
-          <p class="feature-text">
-            Upload a video and it plays back as living ASCII art in real time.
-            Works with MP4, WebM, MOV, and GIF.
-          </p>
-        </article>
-
-      </div>
-    </div>
-  </section>
-
-
-  <!-- UPLOAD -->
-  <section class="upload-section" id="upload" aria-label="Upload and convert">
-    <div class="section-container">
-
-      <header class="section-header">
-        <p class="section-eyebrow">Try it yourself</p>
-        <h2 class="section-title">Upload your file</h2>
-        <p class="section-sub">Supports JPG, PNG, GIF, MP4, WebM, and MOV</p>
-      </header>
-
-      <!-- Drop zone -->
-      <div class="drop-zone" id="drop-zone" role="button" tabindex="0"
-           aria-label="Drop an image or video, or press Enter to browse files">
-        <div class="drop-icon" aria-hidden="true">↑</div>
-        <p class="drop-label">Drop your image or video here</p>
-        <p class="drop-sub">or</p>
-        <label class="btn btn-outline" onclick="event.stopPropagation()">
-          Browse files
-          <input type="file" id="file-input" accept="image/*,video/*" hidden>
-        </label>
-      </div>
-
-      <!-- Output — hidden until a file loads -->
-      <div class="upload-output" id="upload-output" hidden>
-
-        <div class="output-card">
-          <div class="output-header">
-            <span class="output-filename" id="upload-filename">Your file</span>
-            <span class="output-badge">ASCII Art</span>
-          </div>
-          <canvas id="ascii-output-canvas" aria-label="Your image rendered as ASCII art"></canvas>
+        <!-- Drop zone -->
+        <div class="drop-zone" id="drop-zone" role="button" tabindex="0"
+             aria-label="Drop an image or video, or press Enter to browse files">
+          <div class="drop-icon" aria-hidden="true">↑</div>
+          <p class="drop-label">Drop your image or video here</p>
+          <p class="drop-sub">or</p>
+          <label class="btn btn-outline" onclick="event.stopPropagation()">
+            Browse files
+            <input type="file" id="file-input" accept="image/*,video/*" hidden>
+          </label>
         </div>
 
-        <!-- Video controls -->
-        <div class="video-controls" id="video-controls" hidden>
-          <button class="btn btn-outline" id="video-play-pause">Play</button>
+        <!-- Output — hidden until a file loads -->
+        <div class="upload-output" id="upload-output" hidden>
+
+          <div class="output-card">
+            <div class="output-header">
+              <span class="output-filename" id="upload-filename">Your file</span>
+              <span class="output-badge">ASCII Art</span>
+            </div>
+            <canvas id="ascii-output-canvas" aria-label="Your image rendered as ASCII art"></canvas>
+          </div>
+
+          <!-- Video controls -->
+          <div class="video-controls" id="video-controls" hidden>
+            <button class="btn btn-outline" id="video-play-pause">▶  Play</button>
+            <input type="range" class="scrub-bar" id="video-scrub" min="0" max="1000" value="0" step="1"
+                   aria-label="Video scrub bar">
+            <span class="video-time" id="video-time">0:00 / 0:00</span>
+          </div>
+
+          <!-- Controls -->
+          <div class="upload-controls">
+
+            <div class="control-group">
+              <div class="control-header">
+                <label for="cell-size-slider">Scale</label>
+                <span class="control-value" id="cell-size-val">Fine</span>
+              </div>
+              <input type="range" id="cell-size-slider" min="4" max="24" value="7" step="1">
+              <div class="slider-labels" aria-hidden="true">
+                <span>Fine</span>
+                <span>Coarse</span>
+              </div>
+            </div>
+
+            <div class="control-group">
+              <div class="control-header">
+                <label for="gamma-slider">Brightness</label>
+                <span class="control-value" id="gamma-val">Natural</span>
+              </div>
+              <input type="range" id="gamma-slider" min="0.4" max="2.5" value="1.2" step="0.1">
+              <div class="slider-labels" aria-hidden="true">
+                <span>Dark</span>
+                <span>Bright</span>
+              </div>
+            </div>
+
+            <div class="control-group">
+              <div class="control-header">
+                <label for="contrast-slider">Contrast</label>
+                <span class="control-value" id="contrast-val">100%</span>
+              </div>
+              <input type="range" id="contrast-slider" min="0" max="200" value="100" step="1">
+              <div class="slider-labels" aria-hidden="true">
+                <span>Flat</span>
+                <span>Punchy</span>
+              </div>
+            </div>
+
+            <div class="control-group">
+              <div class="control-header">
+                <label for="saturation-slider">Saturation</label>
+                <span class="control-value" id="saturation-val">100%</span>
+              </div>
+              <input type="range" id="saturation-slider" min="0" max="200" value="100" step="1">
+              <div class="slider-labels" aria-hidden="true">
+                <span>Muted</span>
+                <span>Vivid</span>
+              </div>
+            </div>
+
+            <div class="control-group">
+              <div class="control-header">
+                <label for="hue-slider">Hue shift</label>
+                <span class="control-value" id="hue-val">0°</span>
+              </div>
+              <input type="range" id="hue-slider" min="0" max="360" value="0" step="1">
+              <div class="slider-labels" aria-hidden="true">
+                <span>0°</span>
+                <span>360°</span>
+              </div>
+            </div>
+
+            <div class="control-group">
+              <div class="control-header">
+                <label for="blend-slider">Show original</label>
+                <span class="control-value" id="blend-val">0%</span>
+              </div>
+              <input type="range" id="blend-slider" min="0" max="0.6" value="0" step="0.05">
+              <div class="slider-labels" aria-hidden="true">
+                <span>Off</span>
+                <span>Show through</span>
+              </div>
+            </div>
+
+            <div class="control-group">
+              <label class="control-group-label">Character style</label>
+              <div class="btn-group">
+                <button class="toggle-btn active" data-upload-charset="standard">Dense</button>
+                <button class="toggle-btn"        data-upload-charset="blocks">Blocks</button>
+                <button class="toggle-btn"        data-upload-charset="minimal">Simple</button>
+              </div>
+            </div>
+
+          </div>
         </div>
 
-        <!-- Controls -->
-        <div class="upload-controls">
-
-          <div class="control-group">
-            <div class="control-header">
-              <label for="cell-size-slider">Scale</label>
-              <span class="control-value" id="cell-size-val">Fine</span>
-            </div>
-            <input type="range" id="cell-size-slider" min="4" max="24" value="7" step="1">
-            <div class="slider-labels" aria-hidden="true">
-              <span>Fine</span>
-              <span>Coarse</span>
-            </div>
-          </div>
-
-          <div class="control-group">
-            <div class="control-header">
-              <label for="gamma-slider">Brightness</label>
-              <span class="control-value" id="gamma-val">Natural</span>
-            </div>
-            <input type="range" id="gamma-slider" min="0.4" max="2.5" value="1.2" step="0.1">
-            <div class="slider-labels" aria-hidden="true">
-              <span>Dark</span>
-              <span>Bright</span>
-            </div>
-          </div>
-
-          <div class="control-group">
-            <div class="control-header">
-              <label for="blend-slider">Show original image</label>
-              <span class="control-value" id="blend-val">0%</span>
-            </div>
-            <input type="range" id="blend-slider" min="0" max="0.6" value="0" step="0.05">
-            <div class="slider-labels" aria-hidden="true">
-              <span>Off</span>
-              <span>Show through</span>
-            </div>
-          </div>
-
-          <div class="control-group">
-            <label class="control-group-label">Character style</label>
-            <div class="btn-group">
-              <button class="toggle-btn active" data-upload-charset="standard">Dense</button>
-              <button class="toggle-btn"        data-upload-charset="blocks">Blocks</button>
-              <button class="toggle-btn"        data-upload-charset="minimal">Simple</button>
-            </div>
-          </div>
-
-        </div>
       </div>
-
-    </div>
-  </section>
-
-
-  <!-- LIVE DEMO -->
-  <section class="demo-section" id="demo" aria-label="Live animation demo">
-    <div class="section-container">
-
-      <header class="section-header">
-        <p class="section-eyebrow">No upload needed</p>
-        <h2 class="section-title">Live animation</h2>
-        <p class="section-sub">Watch a live ASCII animation and adjust it in real time.</p>
-      </header>
-
-      <div class="demo-container">
-
-        <div class="ascii-display" role="img" aria-label="Live ASCII animation">
-          <pre id="demo-ascii-output" aria-live="off"></pre>
-        </div>
-
-        <div class="demo-controls" role="group" aria-label="Animation controls">
-
-          <div class="control-group">
-            <label class="control-group-label">Animation</label>
-            <div class="btn-group vertical">
-              <button class="toggle-btn active" data-mode="plasma">Flowing</button>
-              <button class="toggle-btn"        data-mode="wave">Ripple</button>
-              <button class="toggle-btn"        data-mode="radial">Rings</button>
-            </div>
-          </div>
-
-          <div class="control-group">
-            <label class="control-group-label">Character style</label>
-            <div class="btn-group vertical">
-              <button class="toggle-btn active" data-charset="standard">Dense</button>
-              <button class="toggle-btn"        data-charset="blocks">Blocks</button>
-              <button class="toggle-btn"        data-charset="minimal">Simple</button>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
-    </div>
-  </section>
+    </section>
+  </main>
 
 
   <!-- FOOTER -->
   <footer class="footer" aria-label="Site footer">
-    <div class="section-container">
-      <div class="footer-inner">
-        <p class="footer-brand">ASCII Look</p>
-        <p class="footer-text">An open-source project. Free to use forever.</p>
-        <nav class="footer-links" aria-label="Footer links">
-          <a href="https://github.com/pearlraina/ascii-look-v01" class="footer-link" target="_blank" rel="noopener">GitHub</a>
-          <a href="https://github.com/pearlraina/ascii-look-v01/blob/main/LICENSE" class="footer-link" target="_blank" rel="noopener">MIT License</a>
-        </nav>
-      </div>
+    <div class="footer-inner">
+      <p class="footer-brand">ASCII Look</p>
+      <p class="footer-text">An open-source project. Free to use forever.</p>
+      <nav class="footer-links" aria-label="Footer links">
+        <a href="https://github.com/pearlraina/ascii-look-v01" class="footer-link" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/pearlraina/ascii-look-v01/blob/main/LICENSE" class="footer-link" target="_blank" rel="noopener">MIT License</a>
+      </nav>
     </div>
   </footer>
 
