@@ -3,6 +3,7 @@
  *
  * Wires the ascii.js engine to the DOM:
  *   • Upload section — image/video to colored ASCII canvas
+ *   • Custom symbol images — user's own PNGs replace font glyphs
  *   • Video scrub    — seek bar + time display
  *   • CSS filters    — contrast, saturation, hue shift post-processing
  *   • Nav            — scroll-state class
@@ -10,25 +11,80 @@
 
 'use strict';
 
+// ── Custom symbol image registry ───────────────────────────────
+// Maps charset character → loaded HTMLImageElement.
+// Expected format: white/light symbol on transparent PNG background.
+// Naming: dot.png, colon.png, equals.png, star.png, hash.png
+const symbolImages = {};
+
+const SYMBOL_NAME_MAP = {
+  'dot':      '.',
+  'period':   '.',
+  'colon':    ':',
+  'equals':   '=',
+  'equal':    '=',
+  'star':     '*',
+  'asterisk': '*',
+  'hash':     '#',
+  'hashtag':  '#',
+  'pound':    '#'
+};
+
+// Single reusable tint canvas — avoids allocating a canvas per cell per frame
+let _tintCanvas = null;
+let _tintCtx    = null;
+let _tintW      = 0;
+let _tintH      = 0;
+
+function drawTintedSymbol(ctx, char, x, y, cellW, cellH, r, g, b) {
+  const img = symbolImages[char];
+  if (!img) return false;
+
+  const w = Math.ceil(cellW);
+  const h = Math.ceil(cellH);
+
+  if (!_tintCanvas || _tintW !== w || _tintH !== h) {
+    _tintCanvas = Object.assign(document.createElement('canvas'), { width: w, height: h });
+    _tintCtx    = _tintCanvas.getContext('2d');
+    _tintW = w; _tintH = h;
+  }
+
+  _tintCtx.clearRect(0, 0, w, h);
+  // Draw the symbol (white/light on transparent)
+  _tintCtx.globalCompositeOperation = 'source-over';
+  _tintCtx.drawImage(img, 0, 0, w, h);
+  // Tint: fill only the non-transparent parts with the source color
+  _tintCtx.globalCompositeOperation = 'source-in';
+  _tintCtx.fillStyle = `rgb(${r},${g},${b})`;
+  _tintCtx.fillRect(0, 0, w, h);
+  _tintCtx.globalCompositeOperation = 'source-over';
+
+  ctx.drawImage(_tintCanvas, x, y);
+  return true;
+}
+
+function hasCustomImages() {
+  return Object.keys(symbolImages).length > 0;
+}
+
 // ── High-quality downsampler ───────────────────────────────────
-// Halves the image repeatedly (each step is a clean 2× bilinear
-// reduction) rather than jumping straight to the target size.
-// This avoids the moire/colour-smearing that single-step downscaling
-// produces, especially when the ratio is large (e.g. 4000 → 200 px).
-// Intermediate canvases are cached so video frames don't pay the
-// allocation cost every frame.
+// Halves the image iteratively (each step is a clean 2× bilinear
+// reduction) to avoid the moire / colour-smearing that a single
+// large-ratio drawImage produces at fine cell sizes.
+// Intermediate canvases are cached — video frames pay no extra cost.
 let _dsCache = null;
 
 function downsample(src, targetW, targetH) {
   const srcW = src.videoWidth  || src.naturalWidth  || src.width  || targetW;
   const srcH = src.videoHeight || src.naturalHeight || src.height || targetH;
 
-  // Reuse canvases when dimensions haven't changed (every video frame)
   if (!(_dsCache &&
-        _dsCache.srcW === srcW && _dsCache.srcH === srcH &&
+        _dsCache.srcW    === srcW    && _dsCache.srcH    === srcH &&
         _dsCache.targetW === targetW && _dsCache.targetH === targetH)) {
+
     const steps = [];
     let w = srcW, h = srcH;
+
     while (w > targetW * 1.5 || h > targetH * 1.5) {
       w = Math.max(Math.ceil(w / 2), targetW);
       h = Math.max(Math.ceil(h / 2), targetH);
@@ -38,7 +94,7 @@ function downsample(src, targetW, targetH) {
       x.imageSmoothingQuality = 'high';
       steps.push({ c, x, w, h });
     }
-    // Ensure final step lands exactly on target
+
     const last = steps[steps.length - 1];
     if (!last || last.w !== targetW || last.h !== targetH) {
       const c = Object.assign(document.createElement('canvas'), { width: targetW, height: targetH });
@@ -47,6 +103,7 @@ function downsample(src, targetW, targetH) {
       x.imageSmoothingQuality = 'high';
       steps.push({ c, x, w: targetW, h: targetH });
     }
+
     _dsCache = { srcW, srcH, targetW, targetH, steps };
   }
 
@@ -56,6 +113,7 @@ function downsample(src, targetW, targetH) {
     step.x.drawImage(prev, 0, 0, step.w, step.h);
     prev = step.c;
   }
+
   const fin = steps[steps.length - 1];
   return fin.x.getImageData(0, 0, fin.w, fin.h);
 }
@@ -67,9 +125,13 @@ function renderColoredAscii(src, outCanvas, cellSize, charset = 'standard', gamm
 
   const ctx = outCanvas.getContext('2d');
 
+  // 'top' baseline + lineH = pSize means each row sits flush with the next —
+  // no inter-row black gap that made coarse scales look pixelated/striped.
+  ctx.textBaseline = 'top';
   ctx.font = `${pSize}px 'IBM Plex Mono', monospace`;
+
   const cW    = ctx.measureText('M').width;
-  const lineH = pSize * 1.15;
+  const lineH = pSize;   // tight rows — no vertical gap
 
   const cols = Math.floor(outCanvas.width  / cW);
   const rows = Math.floor(outCanvas.height / lineH);
@@ -92,10 +154,12 @@ function renderColoredAscii(src, outCanvas, cellSize, charset = 'standard', gamm
   }
 
   ctx.font = `${pSize}px 'IBM Plex Mono', monospace`;
+  ctx.textBaseline = 'top';
+
+  const useImages = hasCustomImages();
 
   for (let row = 0; row < rows; row++) {
-    // Integer y position — prevents sub-pixel blurring of tiny text
-    const y = Math.round(row * lineH + pSize);
+    const y = Math.round(row * lineH);
     for (let col = 0; col < cols; col++) {
       const i = (row * cols + col) * 4;
       const r = data[i], g = data[i + 1], b = data[i + 2];
@@ -103,10 +167,15 @@ function renderColoredAscii(src, outCanvas, cellSize, charset = 'standard', gamm
       const { char } = pixelToAsciiCell(r, g, b, charset, gamma);
       if (char === ' ') continue;
 
-      // Full opacity — character density encodes brightness,
-      // dark colours naturally recede against the black background.
+      const x = Math.round(col * cW);
+
+      if (useImages && drawTintedSymbol(ctx, char, x, y, cW, lineH, r, g, b)) {
+        continue; // image drawn — skip font fallback
+      }
+
+      // Font fallback — full opacity, integer-aligned position
       ctx.fillStyle = `rgb(${r},${g},${b})`;
-      ctx.fillText(char, Math.round(col * cW), y);
+      ctx.fillText(char, x, y);
     }
   }
 }
@@ -118,9 +187,9 @@ let uploadCellSize   = 7;
 let uploadCharset    = 'standard';
 let uploadGamma      = 1.2;
 let uploadBlend      = 0;
-let uploadContrast   = 100;   // %
-let uploadSaturation = 100;   // %
-let uploadHue        = 0;     // degrees
+let uploadContrast   = 100;
+let uploadSaturation = 100;
+let uploadHue        = 0;
 let uploadRAF        = null;
 
 // ── Label helpers ──────────────────────────────────────────────
@@ -140,7 +209,7 @@ function gammaLabel(v) {
   return 'Very bright';
 }
 
-// ── Apply CSS filters to the canvas ───────────────────────────
+// ── Apply CSS filters ──────────────────────────────────────────
 function applyCanvasFilters() {
   const canvas = document.getElementById('ascii-output-canvas');
   if (!canvas) return;
@@ -154,9 +223,62 @@ function applyCanvasFilters() {
 // ── Format seconds as m:ss ─────────────────────────────────────
 function fmtTime(s) {
   if (!isFinite(s)) return '0:00';
-  const m = Math.floor(s / 60);
+  const m   = Math.floor(s / 60);
   const sec = Math.floor(s % 60);
   return `${m}:${sec.toString().padStart(2, '0')}`;
+}
+
+// ── Symbol image pickers ───────────────────────────────────────
+function initSymbolPickers() {
+  const zone = document.getElementById('symbol-drop-zone');
+  if (!zone) return;
+
+  // Multi-file input
+  const input = document.getElementById('symbol-file-input');
+  if (input) {
+    input.addEventListener('change', e => {
+      [...e.target.files].forEach(loadSymbolFile);
+    });
+  }
+
+  // Drag and drop onto the zone
+  zone.addEventListener('dragover', e => {
+    e.preventDefault();
+    zone.classList.add('drop-zone--active');
+  });
+  ['dragleave', 'dragend'].forEach(ev =>
+    zone.addEventListener(ev, () => zone.classList.remove('drop-zone--active'))
+  );
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('drop-zone--active');
+    [...e.dataTransfer.files].forEach(loadSymbolFile);
+  });
+  zone.addEventListener('click', () => input && input.click());
+}
+
+function loadSymbolFile(file) {
+  const base = file.name.replace(/\.[^.]+$/, '').toLowerCase(); // strip extension
+  const char = SYMBOL_NAME_MAP[base];
+  if (!char) return; // unknown filename — ignore
+
+  const img = new Image();
+  img.onload = () => {
+    symbolImages[char] = img;
+    updateSymbolStatus(char);
+    // Invalidate tint canvas dimensions since we may be switching to image mode
+    _tintW = 0; _tintH = 0;
+    if (uploadSrc && uploadMode === 'image') renderUpload();
+  };
+  img.src = URL.createObjectURL(file);
+}
+
+function updateSymbolStatus(char) {
+  const el = document.querySelector(`.sym-status[data-sym="${char}"]`);
+  if (el) {
+    el.textContent = '✓';
+    el.classList.add('loaded');
+  }
 }
 
 // ── Init upload section ────────────────────────────────────────
@@ -167,19 +289,16 @@ function initUpload() {
   const cellVal    = document.getElementById('cell-size-val');
   if (!dropZone) return;
 
-  // Click / keyboard on drop zone
   dropZone.addEventListener('click', e => {
     if (e.target.tagName !== 'INPUT') fileInput.click();
   });
   dropZone.addEventListener('keydown', e => {
     if (e.key === 'Enter' || e.key === ' ') fileInput.click();
   });
-
   fileInput.addEventListener('change', e => {
     if (e.target.files[0]) handleUploadFile(e.target.files[0]);
   });
 
-  // Drag and drop
   dropZone.addEventListener('dragover', e => {
     e.preventDefault();
     dropZone.classList.add('drop-zone--active');
@@ -281,18 +400,12 @@ function initUpload() {
 
   // Video scrub
   const scrub     = document.getElementById('video-scrub');
-  const timeLabel = document.getElementById('video-time');
   if (scrub) {
-    let scrubbing = false;
-    scrub.addEventListener('mousedown', () => { scrubbing = true; });
-    scrub.addEventListener('touchstart', () => { scrubbing = true; }, { passive: true });
     scrub.addEventListener('input', () => {
       if (!uploadSrc || uploadMode !== 'video') return;
       const t = (scrub.value / 1000) * uploadSrc.duration;
       if (isFinite(t)) uploadSrc.currentTime = t;
     });
-    window.addEventListener('mouseup',  () => { scrubbing = false; });
-    window.addEventListener('touchend', () => { scrubbing = false; });
   }
 }
 
@@ -351,11 +464,13 @@ function showUploadOutput(srcW, srcH, isVideo) {
   canvas.style.width  = '100%';
   canvas.style.height = 'auto';
 
-  // Clear downsample cache so old dimensions don't carry over
+  // Clear caches for new file
   _dsCache = null;
+  _tintW   = 0;
+  _tintH   = 0;
 
-  // Reset CSS filters to default when a new file is loaded
-  canvas.style.filter = '';
+  // Reset CSS filters
+  canvas.style.filter  = '';
   uploadContrast   = 100;
   uploadSaturation = 100;
   uploadHue        = 0;
@@ -390,21 +505,12 @@ function startVideoLoop() {
 
   function frame() {
     if (uploadSrc && uploadMode === 'video') {
-      if (!uploadSrc.paused && !uploadSrc.ended) {
-        renderUpload();
-      }
-      // Update play/pause label
-      if (playBtn) {
-        playBtn.textContent = uploadSrc.paused ? '▶  Play' : '⏸  Pause';
-      }
-      // Update scrub bar (only when not scrubbing)
-      if (scrub && uploadSrc.duration > 0) {
+      if (!uploadSrc.paused && !uploadSrc.ended) renderUpload();
+      if (playBtn)   playBtn.textContent = uploadSrc.paused ? '▶  Play' : '⏸  Pause';
+      if (scrub && uploadSrc.duration > 0)
         scrub.value = (uploadSrc.currentTime / uploadSrc.duration) * 1000;
-      }
-      // Update time label
-      if (timeLabel && uploadSrc.duration > 0) {
+      if (timeLabel && uploadSrc.duration > 0)
         timeLabel.textContent = `${fmtTime(uploadSrc.currentTime)} / ${fmtTime(uploadSrc.duration)}`;
-      }
     }
     uploadRAF = requestAnimationFrame(frame);
   }
@@ -424,4 +530,5 @@ function initNav() {
 document.addEventListener('DOMContentLoaded', () => {
   initNav();
   initUpload();
+  initSymbolPickers();
 });

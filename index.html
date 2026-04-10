@@ -154,6 +154,23 @@
               </div>
             </div>
 
+            <!-- Custom symbol images -->
+            <div class="control-group symbol-group">
+              <label class="control-group-label">Custom symbol images</label>
+              <p class="control-hint">Drop your PNG files here. Name them: <strong>dot.png&nbsp; colon.png&nbsp; equals.png&nbsp; star.png&nbsp; hash.png</strong></p>
+              <div class="symbol-drop-zone" id="symbol-drop-zone" role="button" tabindex="0">
+                <span class="symbol-drop-label">Drop PNGs or click to browse</span>
+                <input type="file" id="symbol-file-input" accept="image/png,image/svg+xml" multiple hidden>
+              </div>
+              <div class="symbol-status-row" aria-label="Loaded symbols">
+                <span class="sym-item"><span class="sym-glyph">.</span><span class="sym-status" data-sym=".">—</span></span>
+                <span class="sym-item"><span class="sym-glyph">:</span><span class="sym-status" data-sym=":">—</span></span>
+                <span class="sym-item"><span class="sym-glyph">=</span><span class="sym-status" data-sym="=">—</span></span>
+                <span class="sym-item"><span class="sym-glyph">*</span><span class="sym-status" data-sym="*">—</span></span>
+                <span class="sym-item"><span class="sym-glyph">#</span><span class="sym-status" data-sym="#">—</span></span>
+              </div>
+            </div>
+
           </div>
         </div>
 

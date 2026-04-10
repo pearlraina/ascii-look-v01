@@ -354,6 +354,60 @@ input[type='range']::-moz-range-thumb {
   color:     var(--text-muted);
 }
 
+/* Control hint text ────────────────────────────────────────── */
+.control-hint {
+  font-size:   0.8rem;
+  color:       var(--text-muted);
+  line-height: 1.55;
+  max-width:   360px;
+}
+.control-hint strong { color: var(--text-secondary); font-weight: 500; }
+
+/* Symbol image drop zone ───────────────────────────────────── */
+.symbol-group { max-width: 400px; }
+
+.symbol-drop-zone {
+  border:        1px dashed var(--border);
+  border-radius: var(--r-sm);
+  padding:       14px 20px;
+  text-align:    center;
+  cursor:        pointer;
+  transition:    border-color 0.2s, background 0.2s;
+  user-select:   none;
+}
+.symbol-drop-zone:hover,
+.symbol-drop-zone.drop-zone--active {
+  border-color: var(--text-muted);
+  background:   var(--accent-subtle);
+}
+.symbol-drop-label {
+  font-size: 0.8125rem;
+  color:     var(--text-muted);
+}
+
+.symbol-status-row {
+  display: flex;
+  gap:     16px;
+  flex-wrap: wrap;
+}
+.sym-item {
+  display:     flex;
+  flex-direction: column;
+  align-items: center;
+  gap:         4px;
+}
+.sym-glyph {
+  font-family: var(--font-mono);
+  font-size:   1.125rem;
+  color:       var(--text-primary);
+  line-height: 1;
+}
+.sym-status {
+  font-size: 0.6875rem;
+  color:     var(--text-muted);
+}
+.sym-status.loaded { color: #6bcf7f; }
+
 /* Toggle buttons ───────────────────────────────────────────── */
 .btn-group { display: flex; gap: 6px; flex-wrap: wrap; }
 
