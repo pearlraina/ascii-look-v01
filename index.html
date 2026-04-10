@@ -35,6 +35,7 @@
 
       <ul class="nav-links" role="list">
         <li><a href="#features" class="nav-link">FEATURES</a></li>
+        <li><a href="#upload"   class="nav-link">UPLOAD</a></li>
         <li><a href="#demo"     class="nav-link">DEMO</a></li>
         <li><a href="#code"     class="nav-link">SOURCE</a></li>
         <li><a href="https://github.com/pearlraina/ascii-look-v01" class="nav-link" target="_blank" rel="noopener">GITHUB</a></li>
@@ -131,6 +132,75 @@ No grain. No noise. Just characters and light.
         </article>
 
       </div>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════
+       UPLOAD / ASCII CONVERTER
+  ════════════════════════════════════════════════ -->
+  <section class="upload-section" id="upload" aria-label="ASCII converter">
+    <div class="section-container">
+
+      <header class="section-header">
+        <span class="section-prefix">// ASCII CONVERTER</span>
+        <h2 class="section-title">UPLOAD &amp; CONVERT</h2>
+      </header>
+
+      <!-- Drop zone -->
+      <div class="drop-zone" id="drop-zone" role="button" tabindex="0"
+           aria-label="Drop an image or video here, or press Enter to browse">
+        <p class="drop-icon" aria-hidden="true">[ ↓ ]</p>
+        <p class="drop-label">DROP IMAGE OR VIDEO HERE</p>
+        <p class="drop-sub">PNG · JPG · GIF · MP4 · WEBM · MOV</p>
+        <label class="btn btn-secondary" onclick="event.stopPropagation()">
+          [ BROWSE FILES ]
+          <input type="file" id="file-input" accept="image/*,video/*" hidden>
+        </label>
+      </div>
+
+      <!-- Output (hidden until a file is loaded) -->
+      <div class="upload-output" id="upload-output" hidden>
+
+        <div class="terminal-window">
+          <div class="terminal-bar" aria-hidden="true">
+            <span class="terminal-dot red"></span>
+            <span class="terminal-dot yellow"></span>
+            <span class="terminal-dot green"></span>
+            <span class="terminal-title" id="upload-filename">output</span>
+          </div>
+          <canvas id="ascii-output-canvas" aria-label="Colored ASCII art output"></canvas>
+        </div>
+
+        <!-- Video controls (hidden for images) -->
+        <div class="video-controls" id="video-controls" hidden>
+          <button class="ctrl-btn" id="video-play-pause">▶  PLAY</button>
+        </div>
+
+        <!-- Render controls -->
+        <div class="upload-controls">
+
+          <div class="control-group">
+            <label class="control-label" for="cell-size-slider">// CELL SIZE</label>
+            <div class="slider-wrap">
+              <input type="range" id="cell-size-slider" min="4" max="24" value="10" step="1">
+              <span class="slider-val" id="cell-size-val">10px</span>
+            </div>
+            <p class="control-hint">smaller = more detail</p>
+          </div>
+
+          <div class="control-group">
+            <label class="control-label">// CHARSET</label>
+            <div class="control-buttons">
+              <button class="ctrl-btn active" data-upload-charset="standard">STANDARD</button>
+              <button class="ctrl-btn"        data-upload-charset="blocks">BLOCKS</button>
+              <button class="ctrl-btn"        data-upload-charset="minimal">MINIMAL</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
     </div>
   </section>
 

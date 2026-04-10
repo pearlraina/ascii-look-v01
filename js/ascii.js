@@ -109,6 +109,25 @@ function generateAsciiGrid(cols, rows, modeFn, charset = 'standard', t = 0) {
 }
 
 // ---------------------------------------------------------------------------
+// pixelToAsciiCell  (pure — no DOM required, fully testable in Node.js)
+// ---------------------------------------------------------------------------
+/**
+ * Map an RGB pixel to its ASCII character and luminance.
+ * Uses ITU-R BT.601 perceptual luminance weights.
+ *
+ * @param {number} r       Red   [0–255]
+ * @param {number} g       Green [0–255]
+ * @param {number} b       Blue  [0–255]
+ * @param {string} [charset]  key in CHARSETS — default 'standard'
+ * @returns {{ char: string, lum: number, r: number, g: number, b: number }}
+ */
+function pixelToAsciiCell(r, g, b, charset = 'standard') {
+  const lum  = 0.299 * r + 0.587 * g + 0.114 * b; // ITU-R BT.601 luminance
+  const char = mapBrightnessToChar(lum, charset);
+  return { char, lum, r: r | 0, g: g | 0, b: b | 0 };
+}
+
+// ---------------------------------------------------------------------------
 // Node.js export (for test runner)
 // ---------------------------------------------------------------------------
 if (typeof module !== 'undefined' && module.exports) {
@@ -118,6 +137,7 @@ if (typeof module !== 'undefined' && module.exports) {
     computePlasma,
     computeWave,
     computeRadial,
-    generateAsciiGrid
+    generateAsciiGrid,
+    pixelToAsciiCell
   };
 }

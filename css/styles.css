@@ -548,6 +548,128 @@ body::after {
 }
 
 /* ============================================================
+   UPLOAD SECTION
+   ============================================================ */
+.upload-section { border-top: 1px solid var(--border-dim); }
+
+/* Drop zone ─────────────────────────────────────────────────── */
+.drop-zone {
+  border:         1px dashed var(--border);
+  border-radius:  var(--radius);
+  padding:        56px 24px;
+  text-align:     center;
+  cursor:         pointer;
+  transition:     border-color 0.2s, background 0.2s;
+  user-select:    none;
+}
+.drop-zone:hover,
+.drop-zone--active {
+  border-color: var(--green);
+  background:   var(--green-subtle);
+}
+.drop-zone:focus-visible {
+  outline:        2px solid var(--green);
+  outline-offset: 3px;
+}
+
+.drop-icon {
+  font-size:    1.5rem;
+  color:        var(--green);
+  margin-bottom: 18px;
+  opacity:      0.8;
+}
+.drop-label {
+  font-size:      0.875rem;
+  font-weight:    500;
+  letter-spacing: 0.14em;
+  color:          var(--text-bright);
+  margin-bottom:  8px;
+}
+.drop-sub {
+  font-size:      0.6875rem;
+  letter-spacing: 0.12em;
+  color:          var(--text-dim);
+  margin-bottom:  28px;
+}
+
+/* Output ────────────────────────────────────────────────────── */
+.upload-output  { margin-top: 36px; }
+
+#ascii-output-canvas {
+  display:    block;
+  width:      100%;
+  height:     auto;
+  background: #000;
+}
+
+/* Video controls ────────────────────────────────────────────── */
+.video-controls {
+  display:    flex;
+  gap:        12px;
+  margin-top: 12px;
+}
+
+/* Upload controls ───────────────────────────────────────────── */
+.upload-controls {
+  display:    flex;
+  gap:        40px;
+  flex-wrap:  wrap;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-dim);
+}
+
+/* Range slider ──────────────────────────────────────────────── */
+.slider-wrap {
+  display:     flex;
+  align-items: center;
+  gap:         14px;
+  margin-top:  8px;
+}
+
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance:         none;
+  width:              160px;
+  height:             2px;
+  background:         var(--border);
+  border:             none;
+  outline:            none;
+  cursor:             pointer;
+  border-radius:      0;
+}
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width:              10px;
+  height:             10px;
+  background:         var(--green);
+  cursor:             pointer;
+  border-radius:      0;
+  border:             none;
+}
+input[type='range']::-moz-range-thumb {
+  width:        10px;
+  height:       10px;
+  background:   var(--green);
+  cursor:       pointer;
+  border-radius: 0;
+  border:       none;
+}
+
+.slider-val {
+  font-size:   0.6875rem;
+  color:       var(--green);
+  min-width:   32px;
+}
+
+.control-hint {
+  font-size:      0.625rem;
+  letter-spacing: 0.1em;
+  color:          var(--text-dim);
+  margin-top:     6px;
+}
+
+/* ============================================================
    RESPONSIVE
    ============================================================ */
 @media (max-width: 768px) {

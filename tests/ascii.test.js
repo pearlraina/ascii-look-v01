@@ -19,7 +19,8 @@ const {
   computePlasma,
   computeWave,
   computeRadial,
-  generateAsciiGrid
+  generateAsciiGrid,
+  pixelToAsciiCell
 } = require('../js/ascii.js');
 
 // ---------------------------------------------------------------------------
@@ -193,6 +194,74 @@ section('generateAsciiGrid — custom charset');
   eq(grid, '████', 'blocks charset, full brightness → ████');
 }
 
+// ===========================================================================
+section('pixelToAsciiCell — return shape');
+{
+  const cell = pixelToAsciiCell(128, 64, 32);
+  ok(typeof cell === 'object',          'returns an object');
+  ok(typeof cell.char === 'string',     'cell.char is a string');
+  ok(cell.char.length === 1,            'cell.char is one character');
+  ok(typeof cell.lum  === 'number',     'cell.lum is a number');
+  ok(cell.lum >= 0 && cell.lum <= 255,  'cell.lum ∈ [0, 255]');
+  ok(typeof cell.r === 'number',        'cell.r is a number');
+  ok(typeof cell.g === 'number',        'cell.g is a number');
+  ok(typeof cell.b === 'number',        'cell.b is a number');
+}
+
+section('pixelToAsciiCell — black and white pixels');
+{
+  const black = pixelToAsciiCell(0, 0, 0);
+  eq(black.char, ' ', 'pure black → space (transparent)');
+  ok(Math.abs(black.lum) < 1e-9, 'pure black lum ≈ 0');
+
+  const white = pixelToAsciiCell(255, 255, 255);
+  eq(white.char, '@', 'pure white → @');
+  ok(Math.abs(white.lum - 255) < 1e-6, 'pure white lum ≈ 255');
+}
+
+section('pixelToAsciiCell — luminance formula (ITU-R BT.601)');
+{
+  // Red channel: lum = 0.299 * 255 ≈ 76.245
+  const red = pixelToAsciiCell(255, 0, 0);
+  ok(Math.abs(red.lum - 76.245) < 0.001, `red lum ≈ 76.245 (got ${red.lum.toFixed(3)})`);
+
+  // Green channel: lum = 0.587 * 255 ≈ 149.685
+  const grn = pixelToAsciiCell(0, 255, 0);
+  ok(Math.abs(grn.lum - 149.685) < 0.001, `green lum ≈ 149.685 (got ${grn.lum.toFixed(3)})`);
+
+  // Blue channel: lum = 0.114 * 255 ≈ 29.07
+  const blu = pixelToAsciiCell(0, 0, 255);
+  ok(Math.abs(blu.lum - 29.07) < 0.001, `blue lum ≈ 29.07 (got ${blu.lum.toFixed(3)})`);
+}
+
+section('pixelToAsciiCell — red > blue luminance (perceptual weighting)');
+{
+  const red  = pixelToAsciiCell(255, 0, 0);
+  const blue = pixelToAsciiCell(0, 0, 255);
+  ok(red.lum > blue.lum, 'red perceived brighter than blue (0.299 > 0.114)');
+}
+
+section('pixelToAsciiCell — charsets');
+{
+  const blockWhite = pixelToAsciiCell(255, 255, 255, 'blocks');
+  eq(blockWhite.char, '█', 'blocks: white → █');
+
+  const blockBlack = pixelToAsciiCell(0, 0, 0, 'blocks');
+  eq(blockBlack.char, ' ', 'blocks: black → space');
+
+  const minWhite = pixelToAsciiCell(255, 255, 255, 'minimal');
+  eq(minWhite.char, '@', 'minimal: white → @');
+}
+
+section('pixelToAsciiCell — rgb passthrough');
+{
+  const cell = pixelToAsciiCell(100, 150, 200);
+  eq(cell.r, 100, 'r passthrough');
+  eq(cell.g, 150, 'g passthrough');
+  eq(cell.b, 200, 'b passthrough');
+}
+
+// ===========================================================================
 section('generateAsciiGrid — time parameter affects output');
 {
   const fn   = (c, r, t) => computePlasma(c, r, t);
