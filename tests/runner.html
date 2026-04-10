@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ASCII Look v01 — Browser Test Runner</title>
+  <style>
+    :root {
+      --bg:     #0a0a0a;
+      --green:  #00ff41;
+      --red:    #ff4141;
+      --cyan:   #00d4ff;
+      --text:   #888;
+      --bright: #ccc;
+      --border: #1c1c1c;
+      --dim:    #3a3a3a;
+      --font:   'IBM Plex Mono', 'JetBrains Mono', Consolas, monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family:   var(--font);
+      background:    var(--bg);
+      color:         var(--text);
+      padding:       40px 32px;
+      line-height:   1.6;
+      min-height:    100vh;
+    }
+    h1 {
+      font-size:    1rem;
+      font-weight:  500;
+      letter-spacing: 0.12em;
+      color:        var(--bright);
+      margin-bottom: 4px;
+    }
+    .subtitle {
+      font-size:  0.75rem;
+      color:      var(--dim);
+      margin-bottom: 32px;
+    }
+    #output { max-width: 680px; }
+    .section-name {
+      font-size:    0.7rem;
+      letter-spacing: 0.18em;
+      color:        var(--cyan);
+      margin:       20px 0 6px;
+    }
+    .test-line {
+      font-size:   0.8125rem;
+      padding:     2px 0;
+      display:     flex;
+      gap:         8px;
+    }
+    .pass .icon { color: var(--green); }
+    .fail .icon { color: var(--red); }
+    .pass .msg  { color: var(--text); }
+    .fail .msg  { color: var(--bright); }
+    .detail {
+      font-size:  0.75rem;
+      color:      var(--red);
+      padding-left: 22px;
+    }
+    #summary {
+      margin-top:  32px;
+      padding:     16px 20px;
+      border:      1px solid var(--border);
+      font-size:   0.875rem;
+    }
+    #summary.all-pass { border-color: var(--green); color: var(--green); }
+    #summary.has-fail { border-color: var(--red);   color: var(--red);   }
+    hr { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+    .meta { font-size: 0.6875rem; color: var(--dim); margin-top: 8px; }
+  </style>
+</head>
+<body>
+
+  <h1>ASCII LOOK v01 — TEST RUNNER</h1>
+  <p class="subtitle">Browser-side TDD suite · open the console for full output</p>
+
+  <div id="output"></div>
+  <div id="summary"></div>
+
+  <script src="../js/ascii.js"></script>
+  <script>
+    'use strict';
+
+    const out     = document.getElementById('output');
+    const sumEl   = document.getElementById('summary');
+    let passed    = 0;
+    let failed    = 0;
+    let curSection = null;
+
+    function section(name) {
+      curSection = document.createElement('p');
+      curSection.className   = 'section-name';
+      curSection.textContent = '▸ ' + name;
+      out.appendChild(curSection);
+    }
+
+    function ok(condition, label, detail) {
+      const div = document.createElement('div');
+      div.className = 'test-line ' + (condition ? 'pass' : 'fail');
+      div.innerHTML = `<span class="icon">${condition ? '✓' : '✗'}</span><span class="msg">${label}</span>`;
+      out.appendChild(div);
+      if (!condition && detail) {
+        const d = document.createElement('div');
+        d.className   = 'detail';
+        d.textContent = detail;
+        out.appendChild(d);
+      }
+      condition ? passed++ : failed++;
+    }
+
+    function eq(actual, expected, label) {
+      const pass = actual === expected;
+      ok(pass, label, pass ? null : `expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
+    }
+
+    function throws(fn, label) {
+      let threw = false;
+      try { fn(); } catch (_) { threw = true; }
+      ok(threw, label, threw ? null : 'expected an error but none was thrown');
+    }
+
+    // ── Tests ───────────────────────────────────────────────────
+
+    section('CHARSETS structure');
+    ok(typeof CHARSETS === 'object',           'CHARSETS is an object');
+    ok(typeof CHARSETS.standard === 'string',  'CHARSETS.standard is a string');
+    ok(CHARSETS.standard[0] === ' ',           'standard[0] is space');
+    ok(CHARSETS.blocks[0]   === ' ',           'blocks[0] is space');
+    ok(CHARSETS.minimal[0]  === ' ',           'minimal[0] is space');
+
+    out.appendChild(document.createElement('hr'));
+    section('mapBrightnessToChar — standard');
+    eq(mapBrightnessToChar(0),   ' ', 'brightness 0 → space');
+    eq(mapBrightnessToChar(255), '@', 'brightness 255 → @');
+    ok(mapBrightnessToChar(128).length === 1, 'returns one character');
+
+    section('mapBrightnessToChar — charsets');
+    eq(mapBrightnessToChar(255, 'minimal'), '@', 'minimal 255 → @');
+    eq(mapBrightnessToChar(255, 'blocks'),  '█', 'blocks 255 → █');
+    eq(mapBrightnessToChar(-5),             ' ', 'negative brightness clamped');
+    eq(mapBrightnessToChar(999),            '@', '>255 brightness clamped');
+    throws(() => mapBrightnessToChar(0, 'bad'), 'throws on unknown charset');
+
+    out.appendChild(document.createElement('hr'));
+    section('computePlasma — range & known value');
+    ok(computePlasma(0, 0, 0) === 0.5,              'computePlasma(0,0,0) === 0.5');
+    ok(computePlasma(10, 10, 0) !== computePlasma(10, 10, 1), 'animation changes with t');
+    for (let i = 0; i < 20; i++) {
+      const v = computePlasma(Math.random()*200, Math.random()*80, Math.random()*100);
+      ok(v >= 0 && v <= 1, `plasma sample ${i+1} ∈ [0,1]`);
+      if (v < 0 || v > 1) break;
+    }
+
+    section('computeWave — range');
+    for (let i = 0; i < 20; i++) {
+      const v = computeWave(Math.random()*200, Math.random()*80, Math.random()*100);
+      ok(v >= 0 && v <= 1, `wave sample ${i+1} ∈ [0,1]`);
+      if (v < 0 || v > 1) break;
+    }
+
+    section('computeRadial — range');
+    for (let i = 0; i < 20; i++) {
+      const v = computeRadial(Math.random()*100, Math.random()*40, Math.random()*100, 100, 40);
+      ok(v >= 0 && v <= 1, `radial sample ${i+1} ∈ [0,1]`);
+      if (v < 0 || v > 1) break;
+    }
+    ok(typeof computeRadial(0,0,0,0,0) === 'number', 'safe with cols=0, rows=0');
+
+    out.appendChild(document.createElement('hr'));
+    section('generateAsciiGrid — structure');
+    {
+      const grid  = generateAsciiGrid(10, 5, () => 0);
+      const lines = grid.split('\n');
+      eq(lines.length,    5,  'correct row count');
+      eq(lines[0].length, 10, 'correct col count');
+      eq(grid.replace(/\n/g, ''), ' '.repeat(50), 'all-zero → all spaces');
+    }
+    {
+      const grid = generateAsciiGrid(10, 5, () => 1);
+      eq(grid.replace(/\n/g, ''), '@'.repeat(50), 'all-one → all @');
+    }
+    {
+      const grid = generateAsciiGrid(4, 1, () => 1, 'blocks');
+      eq(grid, '████', 'blocks full-bright → ████');
+    }
+    {
+      const g0 = generateAsciiGrid(20, 8, (c,r,t) => computePlasma(c,r,t), 'standard', 0);
+      const g1 = generateAsciiGrid(20, 8, (c,r,t) => computePlasma(c,r,t), 'standard', 10);
+      ok(g0 !== g1, 'grid changes with time');
+    }
+
+    // ── Summary ─────────────────────────────────────────────────
+    const allPass = failed === 0;
+    sumEl.className   = allPass ? 'all-pass' : 'has-fail';
+    sumEl.innerHTML   = allPass
+      ? `✓ ALL ${passed} TESTS PASSED`
+      : `✗ ${failed} FAILED  /  ${passed} passed`;
+
+    const meta = document.createElement('p');
+    meta.className   = 'meta';
+    meta.textContent = `Run: ${new Date().toISOString()}`;
+    sumEl.appendChild(meta);
+  </script>
+</body>
+</html>

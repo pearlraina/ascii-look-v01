@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="description" content="ASCII Look v01 — Terminal-aesthetic ASCII animation. No grain. No noise. Pure characters." />
+  <meta name="theme-color" content="#00ff41" />
+
+  <!-- Open Graph -->
+  <meta property="og:type"        content="website" />
+  <meta property="og:title"       content="ASCII Look v01" />
+  <meta property="og:description" content="Terminal-aesthetic ASCII animation. No grain. No noise. Pure characters." />
+
+  <title>ASCII Look v01</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+
+<body>
+
+  <!-- ══════════════════════════════════════════════
+       NAV
+  ════════════════════════════════════════════════ -->
+  <nav class="nav" id="nav" aria-label="Main navigation">
+    <div class="nav-container">
+
+      <a href="#hero" class="nav-logo" aria-label="ASCII Look v01 home">
+        <span class="nav-prefix" aria-hidden="true">&gt;</span>
+        <span class="nav-brand">ASCII_LOOK</span>
+        <span class="blink" aria-hidden="true">_</span>
+      </a>
+
+      <ul class="nav-links" role="list">
+        <li><a href="#features" class="nav-link">FEATURES</a></li>
+        <li><a href="#demo"     class="nav-link">DEMO</a></li>
+        <li><a href="#code"     class="nav-link">SOURCE</a></li>
+        <li><a href="https://github.com/pearlraina/ascii-look-v01" class="nav-link" target="_blank" rel="noopener">GITHUB</a></li>
+      </ul>
+
+    </div>
+  </nav>
+
+
+  <!-- ══════════════════════════════════════════════
+       HERO
+  ════════════════════════════════════════════════ -->
+  <section class="hero" id="hero" aria-label="Hero">
+
+    <canvas id="hero-canvas" aria-hidden="true"></canvas>
+
+    <div class="hero-content">
+      <p class="hero-label">[ v01 / INITIALIZED ]</p>
+
+      <h1 class="hero-title" aria-label="ASCII Look">
+        ASCII<br>LOOK
+      </h1>
+
+      <p class="hero-sub">
+        Terminal-aesthetic ASCII animation.
+No grain. No noise. Just characters and light.
+      </p>
+
+      <div class="hero-actions">
+        <a href="#demo"    class="btn btn-primary">[ EXPLORE ]</a>
+        <a href="#code"    class="btn btn-secondary">[ SOURCE ]</a>
+      </div>
+    </div>
+
+    <div class="hero-scroll" aria-hidden="true">
+      <span class="scroll-text">SCROLL</span>
+      <span>▼</span>
+    </div>
+
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════
+       FEATURES
+  ════════════════════════════════════════════════ -->
+  <section class="features" id="features" aria-label="Features">
+    <div class="section-container">
+
+      <header class="section-header">
+        <span class="section-prefix">// SYSTEM CAPABILITIES</span>
+        <h2 class="section-title">WHAT IT DOES</h2>
+      </header>
+
+      <div class="features-grid">
+
+        <article class="feature-card">
+          <p class="feature-icon" aria-hidden="true">@#%=+</p>
+          <h3 class="feature-title">ASCII RENDERING</h3>
+          <p class="feature-text">
+            Every pixel brightness maps to a character in the set.
+            Ten levels from space to&nbsp;<code>@</code>&nbsp;—
+            mathematics turned into art.
+          </p>
+        </article>
+
+        <article class="feature-card">
+          <p class="feature-icon" aria-hidden="true">∅ ⊘ ∅</p>
+          <h3 class="feature-title">ZERO GRAIN</h3>
+          <p class="feature-text">
+            No SVG turbulence. No canvas noise overlay.
+            No film grain filter. Pure geometric and
+            trigonometric patterns only.
+          </p>
+        </article>
+
+        <article class="feature-card">
+          <p class="feature-icon" aria-hidden="true">~∿≈</p>
+          <h3 class="feature-title">THREE MODES</h3>
+          <p class="feature-text">
+            Plasma: four overlapping sine waves.
+            Wave: intersecting axes product.
+            Radial: concentric rings from centre.
+          </p>
+        </article>
+
+        <article class="feature-card">
+          <p class="feature-icon" aria-hidden="true">&lt;/&gt;</p>
+          <h3 class="feature-title">VANILLA JS</h3>
+          <p class="feature-text">
+            No frameworks. No build tools. No bundler.
+            One HTML file, one CSS file, two JS files.
+            Open-source under MIT.
+          </p>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════
+       DEMO
+  ════════════════════════════════════════════════ -->
+  <section class="demo-section" id="demo" aria-label="Interactive demo">
+    <div class="section-container">
+
+      <header class="section-header">
+        <span class="section-prefix">// LIVE PREVIEW</span>
+        <h2 class="section-title">TRY IT</h2>
+      </header>
+
+      <div class="demo-container">
+
+        <!-- Output terminal -->
+        <div class="terminal-window" role="img" aria-label="Live ASCII animation output">
+          <div class="terminal-bar" aria-hidden="true">
+            <span class="terminal-dot red"></span>
+            <span class="terminal-dot yellow"></span>
+            <span class="terminal-dot green"></span>
+            <span class="terminal-title">ascii_renderer.js — running</span>
+          </div>
+          <pre id="demo-ascii-output" aria-live="off"></pre>
+        </div>
+
+        <!-- Controls -->
+        <div class="demo-controls" role="group" aria-label="Animation controls">
+
+          <div class="control-group">
+            <label class="control-label">// MODE</label>
+            <div class="control-buttons" role="group" aria-label="Animation mode">
+              <button class="ctrl-btn active" data-mode="plasma"  aria-pressed="true">PLASMA</button>
+              <button class="ctrl-btn"        data-mode="wave"    aria-pressed="false">WAVE</button>
+              <button class="ctrl-btn"        data-mode="radial"  aria-pressed="false">RADIAL</button>
+            </div>
+          </div>
+
+          <div class="control-group">
+            <label class="control-label">// CHARSET</label>
+            <div class="control-buttons" role="group" aria-label="Character set">
+              <button class="ctrl-btn active" data-charset="standard" aria-pressed="true">STANDARD</button>
+              <button class="ctrl-btn"        data-charset="blocks"   aria-pressed="false">BLOCKS</button>
+              <button class="ctrl-btn"        data-charset="minimal"  aria-pressed="false">MINIMAL</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════
+       CODE / ALGORITHM
+  ════════════════════════════════════════════════ -->
+  <section class="code-section" id="code" aria-label="Source code">
+    <div class="section-container">
+
+      <header class="section-header">
+        <span class="section-prefix">// THE ALGORITHM</span>
+        <h2 class="section-title">HOW IT WORKS</h2>
+      </header>
+
+      <div class="code-terminal">
+        <div class="terminal-bar" aria-hidden="true">
+          <span class="terminal-dot red"></span>
+          <span class="terminal-dot yellow"></span>
+          <span class="terminal-dot green"></span>
+          <span class="terminal-title">js/ascii.js</span>
+        </div>
+        <pre class="code-block"><code><span class="c-comment">// Character set: space = transparent, @ = brightest</span>
+<span class="c-kw">const</span> CHARSETS = {
+  standard: <span class="c-str">' .,:;+*=#@'</span>,
+  blocks:   <span class="c-str">' ░▒▓█'</span>,
+  minimal:  <span class="c-str">' .:@'</span>
+};
+
+<span class="c-comment">// Map brightness [0–255] → single character</span>
+<span class="c-kw">function</span> <span class="c-fn">mapBrightnessToChar</span>(brightness, charset = <span class="c-str">'standard'</span>) {
+  <span class="c-kw">const</span> chars = CHARSETS[charset];
+  <span class="c-kw">const</span> index = Math.floor((brightness / <span class="c-num">255</span>) * (chars.length - <span class="c-num">1</span>));
+  <span class="c-kw">return</span> chars[Math.max(<span class="c-num">0</span>, Math.min(chars.length - <span class="c-num">1</span>, index))];
+}
+
+<span class="c-comment">// Plasma: four overlapping sine waves → [0, 1]</span>
+<span class="c-kw">function</span> <span class="c-fn">computePlasma</span>(col, row, t) {
+  <span class="c-kw">const</span> v1 = Math.sin(col * <span class="c-num">0.10</span> + t);
+  <span class="c-kw">const</span> v2 = Math.sin(row * <span class="c-num">0.10</span> + t * <span class="c-num">0.70</span>);
+  <span class="c-kw">const</span> v3 = Math.sin((col + row) * <span class="c-num">0.07</span> + t * <span class="c-num">0.90</span>);
+  <span class="c-kw">const</span> v4 = Math.sin(Math.sqrt(col*col + row*row) * <span class="c-num">0.08</span> - t);
+  <span class="c-kw">return</span> (v1 + v2 + v3 + v4 + <span class="c-num">4</span>) / <span class="c-num">8</span>; <span class="c-comment">// → [0, 1]</span>
+}</code></pre>
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════
+       FOOTER
+  ════════════════════════════════════════════════ -->
+  <footer class="footer" aria-label="Site footer">
+    <div class="section-container">
+
+      <div class="footer-content">
+        <p class="footer-logo" aria-label="ASCII Look v01">
+          <span class="footer-prefix" aria-hidden="true">&gt;</span>
+          <span class="footer-brand">ASCII_LOOK</span>
+          <span class="footer-version">v01</span>
+        </p>
+
+        <p class="footer-text">
+          Built with pure HTML, CSS &amp; JavaScript.<br>
+          No grain. No noise. No frameworks.
+        </p>
+
+        <nav class="footer-links" aria-label="Footer links">
+          <a href="https://github.com/pearlraina/ascii-look-v01" class="footer-link" target="_blank" rel="noopener">GITHUB</a>
+          <span class="footer-sep" aria-hidden="true">|</span>
+          <a href="tests/runner.html" class="footer-link">TESTS</a>
+          <span class="footer-sep" aria-hidden="true">|</span>
+          <a href="https://github.com/pearlraina/ascii-look-v01/blob/main/LICENSE" class="footer-link" target="_blank" rel="noopener">MIT</a>
+        </nav>
+      </div>
+
+      <div class="footer-bottom">
+        <p class="footer-copy">ASCII_LOOK v01 · 2026 · OPEN SOURCE · NO GRAIN</p>
+      </div>
+
+    </div>
+  </footer>
+
+
+  <!-- ── Scripts (order matters: engine before app) ── -->
+  <script src="js/ascii.js"></script>
+  <script src="js/main.js"></script>
+
+</body>
+</html>
