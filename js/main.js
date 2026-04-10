@@ -20,8 +20,6 @@ let lastTs         = 0;
 // ── Hero canvas ────────────────────────────────────────────────
 let heroCanvas = null;
 let heroCtx    = null;
-let charW      = 6;   // character cell width  (recalculated after font loads)
-let charH      = 10;  // character cell height
 
 function initHero() {
   heroCanvas = document.getElementById('hero-canvas');
@@ -29,61 +27,61 @@ function initHero() {
   heroCtx = heroCanvas.getContext('2d');
   resize();
   window.addEventListener('resize', resize);
-
-  document.fonts.ready.then(() => {
-    // Measure actual glyph width at our render size
-    heroCtx.font = '9px "IBM Plex Mono", monospace';
-    charW = heroCtx.measureText('M').width;
-    charH = 11;
-    requestAnimationFrame(heroLoop);
-  });
+  document.fonts.ready.then(() => requestAnimationFrame(heroLoop));
 }
 
 function resize() {
   if (!heroCanvas) return;
-  heroCanvas.width  = window.innerWidth;
-  heroCanvas.height = window.innerHeight;
+  const dpr = window.devicePixelRatio || 1;
+  // Physical backing-store resolution — canvas CSS size stays 100%×100% via stylesheet
+  heroCanvas.width  = Math.round(window.innerWidth  * dpr);
+  heroCanvas.height = Math.round(window.innerHeight * dpr);
 }
 
 function heroLoop(ts) {
-  const dt = Math.min((ts - lastTs) / 1000, 0.05); // cap at 50 ms to survive tab sleep
+  const dt = Math.min((ts - lastTs) / 1000, 0.05);
   lastTs    = ts;
   animTime += dt * 0.55;
-
   renderHero();
   requestAnimationFrame(heroLoop);
 }
 
 function renderHero() {
-  const w    = heroCanvas.width;
-  const h    = heroCanvas.height;
-  const cols = Math.ceil(w / charW);
-  const rows = Math.ceil(h / charH);
-  const t    = animTime;
-  const ctx  = heroCtx;
-  const chars = CHARSETS.standard;
+  const dpr    = window.devicePixelRatio || 1;
+  const pxSize = 7 * dpr;                          // 7 CSS-px font → physical px
+  const ctx    = heroCtx;
+  const w      = heroCanvas.width;
+  const h      = heroCanvas.height;
+  const chars  = CHARSETS.standard;
+  const t      = animTime;
+
+  ctx.font = `${pxSize}px "IBM Plex Mono", monospace`;
+  const cW = ctx.measureText('M').width;           // physical char width
+  const cH = pxSize * 1.1;
+
+  const cols = Math.ceil(w / cW);
+  const rows = Math.ceil(h / cH);
 
   ctx.clearRect(0, 0, w, h);
-  ctx.font      = '9px "IBM Plex Mono", monospace';
-  ctx.fillStyle = '#00ff41';
+  ctx.fillStyle = '#ffffff';                        // white — no green
 
   for (let row = 0; row < rows; row++) {
-    const y = row * charH + 9;
+    const y = row * cH + pxSize;
     for (let col = 0; col < cols; col++) {
       const v = computePlasma(col, row, t);
-      if (v < 0.12) continue;                        // skip near-black cells
+      if (v < 0.1) continue;
       const char = chars[Math.floor(v * (chars.length - 1))];
       if (char === ' ') continue;
-      ctx.globalAlpha = v * 0.6;
-      ctx.fillText(char, col * charW, y);
+      ctx.globalAlpha = v * 0.28;                  // subtle — it's a background texture
+      ctx.fillText(char, col * cW, y);
     }
   }
   ctx.globalAlpha = 1;
 }
 
 // ── Demo pre ───────────────────────────────────────────────────
-const DEMO_COLS = 58;
-const DEMO_ROWS = 22;
+const DEMO_COLS = 90;
+const DEMO_ROWS = 34;
 
 function initDemo() {
   const out = document.getElementById('demo-ascii-output');
@@ -138,14 +136,19 @@ function initDemo() {
  * @param {number} imageBlend   0–1 opacity of the original image shown behind the ASCII (default 0)
  */
 function renderColoredAscii(src, outCanvas, cellSize, charset = 'standard', gamma = 1.2, imageBlend = 0) {
+  // Scale cellSize to physical pixels so it renders crisply on Retina/HiDPI
+  const dpr   = window.devicePixelRatio || 1;
+  const pSize = cellSize * dpr;                    // physical font size
+
   const ctx   = outCanvas.getContext('2d');
   const chars = CHARSETS[charset] || CHARSETS.standard;
 
-  ctx.font = `${cellSize}px 'IBM Plex Mono', monospace`;
-  const charW = ctx.measureText('M').width;
-  const lineH = cellSize * 1.15;
+  ctx.font = `${pSize}px 'IBM Plex Mono', monospace`;
+  const cW   = ctx.measureText('M').width;         // physical char width
+  const lineH = pSize * 1.15;
 
-  const cols = Math.floor(outCanvas.width  / charW);
+  // outCanvas.width / height are already in physical pixels (set in showUploadOutput)
+  const cols = Math.floor(outCanvas.width  / cW);
   const rows = Math.floor(outCanvas.height / lineH);
   if (cols < 1 || rows < 1) return;
 
@@ -167,10 +170,10 @@ function renderColoredAscii(src, outCanvas, cellSize, charset = 'standard', gamm
   }
 
   // 3. Draw ASCII characters — opacity fades naturally with darkness
-  ctx.font = `${cellSize}px 'IBM Plex Mono', monospace`;
+  ctx.font = `${pSize}px 'IBM Plex Mono', monospace`;
 
   for (let row = 0; row < rows; row++) {
-    const y = row * lineH + cellSize;
+    const y = row * lineH + pSize;
     for (let col = 0; col < cols; col++) {
       const i = (row * cols + col) * 4;
       const r = data[i], g = data[i + 1], b = data[i + 2];
@@ -178,13 +181,13 @@ function renderColoredAscii(src, outCanvas, cellSize, charset = 'standard', gamm
       const { char, lum } = pixelToAsciiCell(r, g, b, charset, gamma);
       if (char === ' ') continue;
 
-      // Shadow opacity: dark areas fade out smoothly — bright areas are fully visible
+      // Shadow opacity: dark areas fade out, bright areas are fully visible
       const alpha = Math.pow(lum / 255, 1.4);
-      if (alpha < 0.04) continue; // skip near-invisible cells
+      if (alpha < 0.04) continue;
 
       ctx.globalAlpha = alpha;
       ctx.fillStyle   = `rgb(${r},${g},${b})`;
-      ctx.fillText(char, col * charW, y);
+      ctx.fillText(char, col * cW, y);
     }
   }
   ctx.globalAlpha = 1;
@@ -193,7 +196,7 @@ function renderColoredAscii(src, outCanvas, cellSize, charset = 'standard', gamm
 // ── Upload state ──────────────────────────────────────────────
 let uploadSrc      = null;
 let uploadMode     = 'image';
-let uploadCellSize = 10;
+let uploadCellSize = 7;      // CSS px — smaller = finer detail on screen
 let uploadCharset  = 'standard';
 let uploadGamma    = 1.2;
 let uploadBlend    = 0;
@@ -347,13 +350,19 @@ function showUploadOutput(srcW, srcH, isVideo) {
   const output   = document.getElementById('upload-output');
   const canvas   = document.getElementById('ascii-output-canvas');
   const vidCtrls = document.getElementById('video-controls');
-  const wrapper  = canvas ? canvas.closest('.terminal-window') : null;
+  const wrapper  = canvas ? canvas.closest('.output-card') : null;
   if (!output || !canvas) return;
 
-  // Size canvas: max 900px wide, preserve source aspect ratio
-  const maxW  = Math.min(900, (wrapper ? wrapper.clientWidth : 900) - 2);
-  canvas.width  = maxW;
-  canvas.height = Math.round(maxW * (srcH / srcW));
+  const dpr    = window.devicePixelRatio || 1;
+  const cssW   = Math.min(900, (wrapper ? wrapper.clientWidth : 900) - 2);
+  const cssH   = Math.round(cssW * (srcH / srcW));
+
+  // Set backing-store to physical pixels for crisp Retina rendering
+  canvas.width  = Math.round(cssW * dpr);
+  canvas.height = Math.round(cssH * dpr);
+  // Let CSS scale the canvas to fill its container
+  canvas.style.width  = '100%';
+  canvas.style.height = 'auto';
 
   if (vidCtrls) vidCtrls.hidden = !isVideo;
   output.hidden = false;
