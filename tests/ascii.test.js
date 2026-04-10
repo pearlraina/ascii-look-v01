@@ -90,19 +90,19 @@ ok(CHARSETS.minimal[0]  === ' ',           'minimal starts with space');
 // ===========================================================================
 section('mapBrightnessToChar — standard charset (default)');
 eq(mapBrightnessToChar(0),   ' ', 'brightness 0 → space (background)');
-eq(mapBrightnessToChar(255), '@', 'brightness 255 → @ (brightest)');
+eq(mapBrightnessToChar(255), '#', 'brightness 255 → # (brightest)');
 ok(typeof mapBrightnessToChar(128) === 'string', 'returns a string');
 ok(mapBrightnessToChar(128).length === 1,        'returns exactly one character');
 
 section('mapBrightnessToChar — named charsets');
 eq(mapBrightnessToChar(0,   'minimal'), ' ', 'minimal: 0 → space');
-eq(mapBrightnessToChar(255, 'minimal'), '@', 'minimal: 255 → @');
+eq(mapBrightnessToChar(255, 'minimal'), '#', 'minimal: 255 → #');
 eq(mapBrightnessToChar(0,   'blocks'),  ' ', 'blocks: 0 → space');
 eq(mapBrightnessToChar(255, 'blocks'),  '█', 'blocks: 255 → █');
 
 section('mapBrightnessToChar — edge values and clamping');
 eq(mapBrightnessToChar(-10), ' ', 'negative brightness clamped to 0 → space');
-eq(mapBrightnessToChar(300), '@', 'brightness > 255 clamped to 255 → @');
+eq(mapBrightnessToChar(300), '#', 'brightness > 255 clamped to 255 → #');
 
 section('mapBrightnessToChar — unknown charset');
 throws(() => mapBrightnessToChar(128, 'unknown'), 'throws on unknown charset');
@@ -182,10 +182,10 @@ section('generateAsciiGrid — all-dark produces all spaces');
   eq(grid.replace(/\n/g, ''), ' '.repeat(50), 'modeFn→0 ⇒ all spaces');
 }
 
-section('generateAsciiGrid — all-bright produces all @');
+section('generateAsciiGrid — all-bright produces all #');
 {
   const grid = generateAsciiGrid(10, 5, () => 1);
-  eq(grid.replace(/\n/g, ''), '@'.repeat(50), 'modeFn→1 ⇒ all @');
+  eq(grid.replace(/\n/g, ''), '#'.repeat(50), 'modeFn→1 ⇒ all #');
 }
 
 section('generateAsciiGrid — custom charset');
@@ -215,7 +215,7 @@ section('pixelToAsciiCell — black and white pixels');
   ok(Math.abs(black.lum) < 1e-9, 'pure black lum ≈ 0');
 
   const white = pixelToAsciiCell(255, 255, 255);
-  eq(white.char, '@', 'pure white → @');
+  eq(white.char, '#', 'pure white → #');
   ok(Math.abs(white.lum - 255) < 1e-6, 'pure white lum ≈ 255');
 }
 
@@ -250,7 +250,27 @@ section('pixelToAsciiCell — charsets');
   eq(blockBlack.char, ' ', 'blocks: black → space');
 
   const minWhite = pixelToAsciiCell(255, 255, 255, 'minimal');
-  eq(minWhite.char, '@', 'minimal: white → @');
+  eq(minWhite.char, '#', 'minimal: white → #');
+}
+
+section('pixelToAsciiCell — gamma adjustment');
+{
+  // gamma > 1 brightens midtones → higher luminance → brighter char
+  const mid    = pixelToAsciiCell(128, 128, 128, 'standard', 1.0);
+  const bright = pixelToAsciiCell(128, 128, 128, 'standard', 2.0);
+  ok(bright.lum >= mid.lum, 'gamma=2.0 brightens midtones vs gamma=1.0');
+
+  // gamma < 1 darkens midtones
+  const dark = pixelToAsciiCell(128, 128, 128, 'standard', 0.5);
+  ok(dark.lum <= mid.lum, 'gamma=0.5 darkens midtones vs gamma=1.0');
+
+  // gamma=1.0 is identity — lum unchanged
+  ok(Math.abs(mid.lum - (0.299*128 + 0.587*128 + 0.114*128)) < 0.001,
+     'gamma=1.0 is identity');
+
+  // extremes (black/white) unaffected by gamma
+  eq(pixelToAsciiCell(0,   0,   0,   'standard', 2.0).char, ' ', 'black stays space at any gamma');
+  eq(pixelToAsciiCell(255, 255, 255, 'standard', 0.5).char, '#', 'white stays # at any gamma');
 }
 
 section('pixelToAsciiCell — rgb passthrough');

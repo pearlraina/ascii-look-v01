@@ -10,10 +10,11 @@
 // ---------------------------------------------------------------------------
 // Character sets  (light → dark, space = transparent background)
 // ---------------------------------------------------------------------------
+// No '@' — characters are chosen for visual weight, not code familiarity.
 const CHARSETS = {
-  standard: ' .,:;+*=#@',   // 10 levels
-  blocks:   ' ░▒▓█',         // 5  levels
-  minimal:  ' .:@'            // 4  levels
+  standard: ' .,:;-+*#',   // 9 levels  (Dense)
+  blocks:   ' ░▒▓█',        // 5 levels  (Blocks)
+  minimal:  ' .:#'           // 4 levels  (Simple)
 };
 
 // ---------------------------------------------------------------------------
@@ -121,8 +122,12 @@ function generateAsciiGrid(cols, rows, modeFn, charset = 'standard', t = 0) {
  * @param {string} [charset]  key in CHARSETS — default 'standard'
  * @returns {{ char: string, lum: number, r: number, g: number, b: number }}
  */
-function pixelToAsciiCell(r, g, b, charset = 'standard') {
-  const lum  = 0.299 * r + 0.587 * g + 0.114 * b; // ITU-R BT.601 luminance
+function pixelToAsciiCell(r, g, b, charset = 'standard', gamma = 1.0) {
+  const rawLum = 0.299 * r + 0.587 * g + 0.114 * b; // ITU-R BT.601
+  // Gamma adjusts the tone curve: >1 brightens midtones, <1 darkens them
+  const lum = gamma === 1.0
+    ? rawLum
+    : Math.pow(rawLum / 255, 1 / gamma) * 255;
   const char = mapBrightnessToChar(lum, charset);
   return { char, lum, r: r | 0, g: g | 0, b: b | 0 };
 }

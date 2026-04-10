@@ -133,14 +133,14 @@
     out.appendChild(document.createElement('hr'));
     section('mapBrightnessToChar — standard');
     eq(mapBrightnessToChar(0),   ' ', 'brightness 0 → space');
-    eq(mapBrightnessToChar(255), '@', 'brightness 255 → @');
+    eq(mapBrightnessToChar(255), '#', 'brightness 255 → #');
     ok(mapBrightnessToChar(128).length === 1, 'returns one character');
 
     section('mapBrightnessToChar — charsets');
-    eq(mapBrightnessToChar(255, 'minimal'), '@', 'minimal 255 → @');
+    eq(mapBrightnessToChar(255, 'minimal'), '#', 'minimal 255 → #');
     eq(mapBrightnessToChar(255, 'blocks'),  '█', 'blocks 255 → █');
     eq(mapBrightnessToChar(-5),             ' ', 'negative brightness clamped');
-    eq(mapBrightnessToChar(999),            '@', '>255 brightness clamped');
+    eq(mapBrightnessToChar(999),            '#', '>255 brightness clamped');
     throws(() => mapBrightnessToChar(0, 'bad'), 'throws on unknown charset');
 
     out.appendChild(document.createElement('hr'));
@@ -179,7 +179,7 @@
     }
     {
       const grid = generateAsciiGrid(10, 5, () => 1);
-      eq(grid.replace(/\n/g, ''), '@'.repeat(50), 'all-one → all @');
+      eq(grid.replace(/\n/g, ''), '#'.repeat(50), 'all-one → all #');
     }
     {
       const grid = generateAsciiGrid(4, 1, () => 1, 'blocks');

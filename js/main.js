@@ -127,7 +127,17 @@ function initDemo() {
  * @param {number}  cellSize            — font size in px (controls density)
  * @param {string}  [charset]
  */
-function renderColoredAscii(src, outCanvas, cellSize, charset = 'standard') {
+/**
+ * Render a source image/video as colored ASCII with gamma and shadow-opacity.
+ *
+ * @param {HTMLImageElement|HTMLVideoElement|HTMLCanvasElement} src
+ * @param {HTMLCanvasElement} outCanvas
+ * @param {number} cellSize     font size in px (controls scale)
+ * @param {string} charset      key in CHARSETS
+ * @param {number} gamma        tone curve: >1 brightens midtones, <1 darkens (default 1.2)
+ * @param {number} imageBlend   0–1 opacity of the original image shown behind the ASCII (default 0)
+ */
+function renderColoredAscii(src, outCanvas, cellSize, charset = 'standard', gamma = 1.2, imageBlend = 0) {
   const ctx   = outCanvas.getContext('2d');
   const chars = CHARSETS[charset] || CHARSETS.standard;
 
@@ -145,29 +155,65 @@ function renderColoredAscii(src, outCanvas, cellSize, charset = 'standard') {
   sc.drawImage(src, 0, 0, cols, rows);
   const { data } = sc.getImageData(0, 0, cols, rows);
 
-  // Black background
+  // 1. Black background
   ctx.fillStyle = '#000000';
   ctx.fillRect(0, 0, outCanvas.width, outCanvas.height);
+
+  // 2. Optional: blend original image underneath the ASCII layer
+  if (imageBlend > 0) {
+    ctx.globalAlpha = imageBlend;
+    ctx.drawImage(src, 0, 0, outCanvas.width, outCanvas.height);
+    ctx.globalAlpha = 1;
+  }
+
+  // 3. Draw ASCII characters — opacity fades naturally with darkness
   ctx.font = `${cellSize}px 'IBM Plex Mono', monospace`;
 
   for (let row = 0; row < rows; row++) {
     const y = row * lineH + cellSize;
     for (let col = 0; col < cols; col++) {
       const i = (row * cols + col) * 4;
-      const { char } = pixelToAsciiCell(data[i], data[i + 1], data[i + 2], charset);
+      const r = data[i], g = data[i + 1], b = data[i + 2];
+
+      const { char, lum } = pixelToAsciiCell(r, g, b, charset, gamma);
       if (char === ' ') continue;
-      ctx.fillStyle = `rgb(${data[i]},${data[i + 1]},${data[i + 2]})`;
+
+      // Shadow opacity: dark areas fade out smoothly — bright areas are fully visible
+      const alpha = Math.pow(lum / 255, 1.4);
+      if (alpha < 0.04) continue; // skip near-invisible cells
+
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle   = `rgb(${r},${g},${b})`;
       ctx.fillText(char, col * charW, y);
     }
   }
+  ctx.globalAlpha = 1;
 }
 
 // ── Upload state ──────────────────────────────────────────────
-let uploadSrc      = null;  // HTMLImageElement or HTMLVideoElement
+let uploadSrc      = null;
 let uploadMode     = 'image';
 let uploadCellSize = 10;
 let uploadCharset  = 'standard';
+let uploadGamma    = 1.2;
+let uploadBlend    = 0;
 let uploadRAF      = null;
+
+function cellSizeLabel(v) {
+  if (v <= 6)  return 'Extra fine';
+  if (v <= 10) return 'Fine';
+  if (v <= 15) return 'Medium';
+  if (v <= 20) return 'Coarse';
+  return 'Very coarse';
+}
+
+function gammaLabel(v) {
+  if (v <= 0.7) return 'Dark';
+  if (v <= 1.0) return 'Slightly dark';
+  if (v <= 1.4) return 'Natural';
+  if (v <= 2.0) return 'Bright';
+  return 'Very bright';
+}
 
 function initUpload() {
   const dropZone   = document.getElementById('drop-zone');
@@ -203,16 +249,41 @@ function initUpload() {
     if (file) handleUploadFile(file);
   });
 
-  // Cell size slider
+  // Cell size / scale slider
   if (cellSlider) {
     cellSlider.addEventListener('input', () => {
       uploadCellSize = parseInt(cellSlider.value, 10);
-      if (cellVal) cellVal.textContent = uploadCellSize + 'px';
+      if (cellVal) cellVal.textContent = cellSizeLabel(uploadCellSize);
+      if (uploadSrc && uploadMode === 'image') renderUpload();
+    });
+    // Set initial label
+    if (cellVal) cellVal.textContent = cellSizeLabel(uploadCellSize);
+  }
+
+  // Gamma slider
+  const gammaSlider = document.getElementById('gamma-slider');
+  const gammaVal    = document.getElementById('gamma-val');
+  if (gammaSlider) {
+    gammaSlider.addEventListener('input', () => {
+      uploadGamma = parseFloat(gammaSlider.value);
+      if (gammaVal) gammaVal.textContent = gammaLabel(uploadGamma);
+      if (uploadSrc && uploadMode === 'image') renderUpload();
+    });
+    if (gammaVal) gammaVal.textContent = gammaLabel(uploadGamma);
+  }
+
+  // Image blend slider
+  const blendSlider = document.getElementById('blend-slider');
+  const blendVal    = document.getElementById('blend-val');
+  if (blendSlider) {
+    blendSlider.addEventListener('input', () => {
+      uploadBlend = parseFloat(blendSlider.value);
+      if (blendVal) blendVal.textContent = Math.round(uploadBlend * 100) + '%';
       if (uploadSrc && uploadMode === 'image') renderUpload();
     });
   }
 
-  // Charset buttons for the upload section
+  // Character style buttons for the upload section
   document.querySelectorAll('[data-upload-charset]').forEach(btn => {
     btn.addEventListener('click', () => {
       uploadCharset = btn.dataset.uploadCharset;
@@ -292,7 +363,7 @@ function showUploadOutput(srcW, srcH, isVideo) {
 function renderUpload() {
   const canvas = document.getElementById('ascii-output-canvas');
   if (!canvas || !uploadSrc) return;
-  renderColoredAscii(uploadSrc, canvas, uploadCellSize, uploadCharset);
+  renderColoredAscii(uploadSrc, canvas, uploadCellSize, uploadCharset, uploadGamma, uploadBlend);
 }
 
 function startVideoLoop() {
@@ -329,6 +400,9 @@ function initControls() {
       btn.classList.add('active');
     });
   });
+
+  // Sync demo rendering with the visual charset names
+  // (demo uses CHARSETS keys directly; the labels Dense/Blocks/Simple map 1:1 to standard/blocks/minimal)
 }
 
 // ── Nav scroll class ───────────────────────────────────────────
