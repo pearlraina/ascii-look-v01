@@ -12,9 +12,9 @@
 // ---------------------------------------------------------------------------
 // No '@' — characters are chosen for visual weight, not code familiarity.
 const CHARSETS = {
-  standard: ' .,:;-+*#',   // 9 levels  (Dense)
-  blocks:   ' ░▒▓█',        // 5 levels  (Blocks)
-  minimal:  ' .:#'           // 4 levels  (Simple)
+  standard: ' .:=*#',   // 6 levels  (Dense)
+  blocks:   ' ░▒▓█',    // 5 levels  (Blocks)
+  minimal:  ' .:#'       // 4 levels  (Simple)
 };
 
 // ---------------------------------------------------------------------------

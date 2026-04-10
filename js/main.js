@@ -10,23 +10,62 @@
 
 'use strict';
 
+// ── High-quality downsampler ───────────────────────────────────
+// Halves the image repeatedly (each step is a clean 2× bilinear
+// reduction) rather than jumping straight to the target size.
+// This avoids the moire/colour-smearing that single-step downscaling
+// produces, especially when the ratio is large (e.g. 4000 → 200 px).
+// Intermediate canvases are cached so video frames don't pay the
+// allocation cost every frame.
+let _dsCache = null;
+
+function downsample(src, targetW, targetH) {
+  const srcW = src.videoWidth  || src.naturalWidth  || src.width  || targetW;
+  const srcH = src.videoHeight || src.naturalHeight || src.height || targetH;
+
+  // Reuse canvases when dimensions haven't changed (every video frame)
+  if (!(_dsCache &&
+        _dsCache.srcW === srcW && _dsCache.srcH === srcH &&
+        _dsCache.targetW === targetW && _dsCache.targetH === targetH)) {
+    const steps = [];
+    let w = srcW, h = srcH;
+    while (w > targetW * 1.5 || h > targetH * 1.5) {
+      w = Math.max(Math.ceil(w / 2), targetW);
+      h = Math.max(Math.ceil(h / 2), targetH);
+      const c = Object.assign(document.createElement('canvas'), { width: w, height: h });
+      const x = c.getContext('2d', { willReadFrequently: true });
+      x.imageSmoothingEnabled = true;
+      x.imageSmoothingQuality = 'high';
+      steps.push({ c, x, w, h });
+    }
+    // Ensure final step lands exactly on target
+    const last = steps[steps.length - 1];
+    if (!last || last.w !== targetW || last.h !== targetH) {
+      const c = Object.assign(document.createElement('canvas'), { width: targetW, height: targetH });
+      const x = c.getContext('2d', { willReadFrequently: true });
+      x.imageSmoothingEnabled = true;
+      x.imageSmoothingQuality = 'high';
+      steps.push({ c, x, w: targetW, h: targetH });
+    }
+    _dsCache = { srcW, srcH, targetW, targetH, steps };
+  }
+
+  const { steps } = _dsCache;
+  let prev = src;
+  for (const step of steps) {
+    step.x.drawImage(prev, 0, 0, step.w, step.h);
+    prev = step.c;
+  }
+  const fin = steps[steps.length - 1];
+  return fin.x.getImageData(0, 0, fin.w, fin.h);
+}
+
 // ── Colored ASCII renderer ─────────────────────────────────────
-/**
- * Render a source image/video as colored ASCII onto a canvas.
- *
- * @param {HTMLImageElement|HTMLVideoElement|HTMLCanvasElement} src
- * @param {HTMLCanvasElement} outCanvas
- * @param {number} cellSize   font size in CSS px (controls density)
- * @param {string} charset    key in CHARSETS
- * @param {number} gamma      tone curve: >1 brightens midtones, <1 darkens
- * @param {number} imageBlend 0–1 opacity of original image shown behind ASCII
- */
 function renderColoredAscii(src, outCanvas, cellSize, charset = 'standard', gamma = 1.2, imageBlend = 0) {
   const dpr   = window.devicePixelRatio || 1;
   const pSize = cellSize * dpr;
 
-  const ctx   = outCanvas.getContext('2d');
-  const chars = CHARSETS[charset] || CHARSETS.standard;
+  const ctx = outCanvas.getContext('2d');
 
   ctx.font = `${pSize}px 'IBM Plex Mono', monospace`;
   const cW    = ctx.measureText('M').width;
@@ -36,18 +75,17 @@ function renderColoredAscii(src, outCanvas, cellSize, charset = 'standard', gamm
   const rows = Math.floor(outCanvas.height / lineH);
   if (cols < 1 || rows < 1) return;
 
-  // Sample source at one pixel per character cell
-  const samp = Object.assign(document.createElement('canvas'), { width: cols, height: rows });
-  const sc   = samp.getContext('2d', { willReadFrequently: true });
-  sc.drawImage(src, 0, 0, cols, rows);
-  const { data } = sc.getImageData(0, 0, cols, rows);
+  // Multi-step high-quality downsample to cell grid
+  const { data } = downsample(src, cols, rows);
 
   // Black background
-  ctx.fillStyle = '#000000';
+  ctx.fillStyle = '#000';
   ctx.fillRect(0, 0, outCanvas.width, outCanvas.height);
 
-  // Optional: blend original image underneath
+  // Optional: original image blended underneath
   if (imageBlend > 0) {
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
     ctx.globalAlpha = imageBlend;
     ctx.drawImage(src, 0, 0, outCanvas.width, outCanvas.height);
     ctx.globalAlpha = 1;
@@ -56,24 +94,21 @@ function renderColoredAscii(src, outCanvas, cellSize, charset = 'standard', gamm
   ctx.font = `${pSize}px 'IBM Plex Mono', monospace`;
 
   for (let row = 0; row < rows; row++) {
-    const y = row * lineH + pSize;
+    // Integer y position — prevents sub-pixel blurring of tiny text
+    const y = Math.round(row * lineH + pSize);
     for (let col = 0; col < cols; col++) {
       const i = (row * cols + col) * 4;
       const r = data[i], g = data[i + 1], b = data[i + 2];
 
-      const { char, lum } = pixelToAsciiCell(r, g, b, charset, gamma);
+      const { char } = pixelToAsciiCell(r, g, b, charset, gamma);
       if (char === ' ') continue;
 
-      // Dark areas fade out naturally
-      const alpha = Math.pow(lum / 255, 1.4);
-      if (alpha < 0.04) continue;
-
-      ctx.globalAlpha = alpha;
-      ctx.fillStyle   = `rgb(${r},${g},${b})`;
-      ctx.fillText(char, col * cW, y);
+      // Full opacity — character density encodes brightness,
+      // dark colours naturally recede against the black background.
+      ctx.fillStyle = `rgb(${r},${g},${b})`;
+      ctx.fillText(char, Math.round(col * cW), y);
     }
   }
-  ctx.globalAlpha = 1;
 }
 
 // ── Upload state ───────────────────────────────────────────────
@@ -315,6 +350,9 @@ function showUploadOutput(srcW, srcH, isVideo) {
   canvas.height = Math.round(cssH * dpr);
   canvas.style.width  = '100%';
   canvas.style.height = 'auto';
+
+  // Clear downsample cache so old dimensions don't carry over
+  _dsCache = null;
 
   // Reset CSS filters to default when a new file is loaded
   canvas.style.filter = '';
